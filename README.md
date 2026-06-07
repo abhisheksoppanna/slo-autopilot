@@ -7,7 +7,7 @@ out of budget** — all generated from that one spec, all agreeing on the same m
 
 [![ci](https://github.com/abhisheksoppanna/slo-autopilot/actions/workflows/ci.yml/badge.svg)](https://github.com/abhisheksoppanna/slo-autopilot/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/abhisheksoppanna/slo-autopilot)](https://goreportcard.com/report/github.com/abhisheksoppanna/slo-autopilot)
-![go](https://img.shields.io/badge/go-1.26-00ADD8)
+![go](https://img.shields.io/badge/go-1.23%2B-00ADD8)
 ![license](https://img.shields.io/badge/license-MIT-blue)
 
 ```console

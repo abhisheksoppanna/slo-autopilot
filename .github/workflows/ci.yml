@@ -58,4 +58,6 @@ jobs:
           go-version-file: go.mod
       - uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          # Pinned: the last v1 release. v2 changed the config schema, and the
+          # linter's build-Go version must be >= the go.mod target (1.23).
+          version: v1.64.8
