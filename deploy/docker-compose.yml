@@ -27,7 +27,7 @@ services:
       RPS: "25"
       ERRORS: "0"        # start healthy; inject failures via /chaos
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     healthcheck:
       test: ["CMD", "/payment-api", "-healthcheck"]
       interval: 5s
@@ -43,12 +43,15 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/rules:/etc/prometheus/rules:ro
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     depends_on:
       - payment-api
 
   grafana:
     image: grafana/grafana:11.2.0
+    # Demo-only: anonymous Admin + a throwaway password for zero-friction local
+    # use. Never expose this stack publicly — all host ports are bound to
+    # 127.0.0.1 so an accidental run on a shared host stays on loopback.
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
@@ -58,6 +61,6 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       - prometheus

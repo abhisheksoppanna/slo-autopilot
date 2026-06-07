@@ -14,7 +14,7 @@ out of budget** — all generated from that one spec, all agreeing on the same m
 $ slo-autopilot gate -f checkout-api.slo.yaml --prometheus http://localhost:9090
 
 [BLOCK] checkout-api-availability
-       • error budget exhausted (2000.0% of budget consumed)
+       • error budget exhausted (2000.0% of budget consumed over 30d)
        • active fast burn: 20.0x budget over the 1h window (page severity)
 
 ✗ gate: deploy frozen by error-budget policy
@@ -163,6 +163,16 @@ datasource UID so provisioning is zero-config.
 
 **A release gate** — `slo-autopilot gate` reads the live budget and exits non-zero
 when policy says don't ship.
+
+## Install
+
+```bash
+# Install the CLI (requires Go 1.23+)
+go install github.com/abhisheksoppanna/slo-autopilot/cmd/slo-autopilot@latest
+
+# …or build from a clone
+make build && ./bin/slo-autopilot --help
+```
 
 ## CLI
 

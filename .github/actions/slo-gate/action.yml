@@ -26,7 +26,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-go@v5
+    - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
       with:
         go-version-file: ${{ github.action_path }}/../../../go.mod
 
@@ -38,10 +38,18 @@ runs:
 
     - name: Evaluate error-budget gate
       shell: bash
+      # Inputs are passed via env, never interpolated into the shell, so a value
+      # like a spec path can't be parsed as a command (Actions injection).
+      env:
+        SPEC: ${{ inputs.spec }}
+        PROM_URL: ${{ inputs.prometheus-url }}
+        POLICY: ${{ inputs.policy }}
+        MIN_REMAINING: ${{ inputs.min-remaining }}
+        BLOCK_FAST_BURN: ${{ inputs.block-fast-burn }}
       run: |
         "${RUNNER_TEMP}/slo-autopilot" gate \
-          -f "${{ inputs.spec }}" \
-          --prometheus "${{ inputs.prometheus-url }}" \
-          --policy "${{ inputs.policy }}" \
-          --min-remaining "${{ inputs.min-remaining }}" \
-          --block-fast-burn="${{ inputs.block-fast-burn }}"
+          -f "$SPEC" \
+          --prometheus "$PROM_URL" \
+          --policy "$POLICY" \
+          --min-remaining "$MIN_REMAINING" \
+          --block-fast-burn="$BLOCK_FAST_BURN"

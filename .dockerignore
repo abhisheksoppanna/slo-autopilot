@@ -1,0 +1,13 @@
+# Keep the Docker build context to just what `go build` needs, so editing a doc
+# or the README doesn't bust the COPY layer and force a full rebuild.
+.git
+.github
+bin/
+deploy/
+docs/
+examples/
+*.md
+.golangci.yml
+.gitignore
+.dockerignore
+tmp/
