@@ -64,7 +64,7 @@ func Generate(s spec.SLO, p burnrate.Policy) RuleGroups {
 	budgetLabels := cloneLabels(commonLabels)
 	g.Rules = append(g.Rules, Rule{
 		Record: BudgetRuleName,
-		Expr:   fmt.Sprintf("vector(%s)", trimFloat(s.ErrorBudget())),
+		Expr:   fmt.Sprintf("vector(%s)", TrimFloat(s.ErrorBudget())),
 		Labels: budgetLabels,
 	})
 
@@ -97,18 +97,14 @@ func Marshal(rg RuleGroups) ([]byte, error) {
 	return append([]byte(header), out...), nil
 }
 
-// ratioExpr builds sum(rate(error[w])) / sum(rate(total[w])), clamped so an
-// idle service (no traffic) reports 0 error ratio rather than NaN.
+// ratioExpr delegates to spec.Indicator.RatioExpr so the recording rules, the
+// Grafana dashboard, and the live gate all measure the SLI from one definition.
 func ratioExpr(ind spec.Indicator, w spec.Duration) string {
-	win := w.Prometheus()
-	return fmt.Sprintf(
-		"sum(rate(%s[%s]))\n/\nclamp_min(sum(rate(%s[%s])), 1e-9)",
-		ind.ErrorMetric, win, ind.TotalMetric, win,
-	)
+	return ind.RatioExpr(w)
 }
 
 func alertRule(s spec.SLO, w burnrate.Window, base string, budget float64, common map[string]string) Rule {
-	threshold := trimFloat(w.Factor * budget)
+	threshold := TrimFloat(w.Factor * budget)
 	sel := sloSelector(s)
 	expr := fmt.Sprintf(
 		"(\n  %s{%s} > %s\n  and\n  %s{%s} > %s\n)",
@@ -120,6 +116,15 @@ func alertRule(s spec.SLO, w burnrate.Window, base string, budget float64, commo
 	labels["severity"] = string(w.Severity)
 	labels["burn_window"] = w.Name
 
+	// Impact clause, clamped at 100%: a time-compressed demo policy can have a
+	// long window larger than the compliance window, which would otherwise read
+	// as a nonsensical ">100% of the budget".
+	consumedPct := w.BudgetConsumed(mustWindow(s)) * 100
+	impact := fmt.Sprintf("Sustained, this consumes %.0f%% of the budget over %s.", consumedPct, w.Long.Prometheus())
+	if consumedPct >= 100 {
+		impact = fmt.Sprintf("Sustained, this exhausts the entire error budget within %s.", w.Long.Prometheus())
+	}
+
 	return Rule{
 		Alert:  base + severitySuffix(w),
 		Expr:   expr,
@@ -129,13 +134,10 @@ func alertRule(s spec.SLO, w burnrate.Window, base string, budget float64, commo
 			"summary": fmt.Sprintf("%s is burning its error budget fast (%gx over %s/%s)",
 				s.Metadata.Service, w.Factor, w.Long.Prometheus(), w.Short.Prometheus()),
 			"description": fmt.Sprintf(
-				"SLO %q (objective %g%% over %s) error ratio exceeds %gx the budget "+
-					"on both the %s and %s windows. Sustained, this consumes %.0f%% of the "+
-					"budget over %s. %s",
+				"SLO %q (objective %g%% over %s) error ratio exceeds %gx the budget on "+
+					"both the %s and %s windows. %s %s",
 				s.Metadata.Name, s.Spec.Objective, s.Spec.Window, w.Factor,
-				w.Long.Prometheus(), w.Short.Prometheus(),
-				w.BudgetConsumed(mustWindow(s))*100, w.Long.Prometheus(),
-				s.Spec.Description,
+				w.Long.Prometheus(), w.Short.Prometheus(), impact, s.Spec.Description,
 			),
 			"runbook": "https://sre.google/workbook/alerting-on-slos/",
 		},
@@ -143,13 +145,14 @@ func alertRule(s spec.SLO, w burnrate.Window, base string, budget float64, commo
 }
 
 func severitySuffix(w burnrate.Window) string {
-	// Disambiguate multiple windows of the same severity by their long window,
-	// so alert names stay unique: …PageFast, …PageSlow style via the window name.
-	caser := map[burnrate.Severity]string{
+	// Alert names are <base><Severity><Window>, e.g. …Page1h, …Ticket3d. The
+	// window name already makes each alert unique; the severity prefix is there
+	// for readability and routing.
+	prefix := map[burnrate.Severity]string{
 		burnrate.SeverityPage:   "Page",
 		burnrate.SeverityTicket: "Ticket",
 	}
-	return caser[w.Severity] + upperFirst(w.Name)
+	return prefix[w.Severity] + upperFirst(w.Name)
 }
 
 func sloSelector(s spec.SLO) string {
@@ -194,10 +197,11 @@ func mustWindow(s spec.SLO) spec.Duration {
 	return d
 }
 
-// trimFloat formats a float without trailing zeros and rounds away binary
-// floating-point noise (14.4*0.001 = 0.014399999999998414 → "0.0144"), keeping
-// generated thresholds readable while staying well within Prometheus precision.
-func trimFloat(f float64) string {
+// TrimFloat formats a float for embedding in a PromQL expression: no trailing
+// zeros, with binary floating-point noise rounded away (1-99.9/100 would
+// otherwise render as 0.0009999999999998899 → "0.001"). Shared by the rule and
+// dashboard generators so both emit clean thresholds.
+func TrimFloat(f float64) string {
 	return fmt.Sprintf("%.10g", f)
 }
 

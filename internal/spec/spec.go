@@ -7,9 +7,12 @@
 package spec
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -99,6 +102,17 @@ func (s SLO) AlertBaseName() string {
 	return pascal(s.Metadata.Name) + "ErrorBudgetBurn"
 }
 
+// RatioExpr returns the canonical PromQL error-ratio expression for the given
+// window — sum(rate(error[w])) / clamp_min(sum(rate(total[w])), 1e-9). It is the
+// single source of truth for how the SLI is measured, so the generated alerts,
+// the dashboard, and the live gate all compute it identically. The clamp_min
+// keeps an idle service (no traffic) reporting a 0 ratio rather than NaN.
+func (i Indicator) RatioExpr(window Duration) string {
+	w := window.Prometheus()
+	return fmt.Sprintf("sum(rate(%s[%s])) / clamp_min(sum(rate(%s[%s])), 1e-9)",
+		i.ErrorMetric, w, i.TotalMetric, w)
+}
+
 // Load reads one or more SLOs from a YAML file. Multi-document files
 // (--- separated) are supported so a team can keep related SLOs together.
 func Load(path string) ([]SLO, error) {
@@ -114,7 +128,7 @@ func Load(path string) ([]SLO, error) {
 		var s SLO
 		err := dec.Decode(&s)
 		if err != nil {
-			if err.Error() == "EOF" {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			return nil, fmt.Errorf("parse spec %q: %w", path, err)
@@ -154,8 +168,12 @@ func (s SLO) Validate() error {
 	if s.Spec.Objective <= 0 || s.Spec.Objective >= 100 {
 		problems = append(problems, fmt.Sprintf("spec.objective must be in (0, 100), got %g", s.Spec.Objective))
 	}
-	if _, err := ParseDuration(s.Spec.Window); err != nil {
+	if d, err := ParseDuration(s.Spec.Window); err != nil {
 		problems = append(problems, fmt.Sprintf("spec.window %q is invalid: %v", s.Spec.Window, err))
+	} else if d <= 0 {
+		problems = append(problems, fmt.Sprintf("spec.window must be positive, got %q", s.Spec.Window))
+	} else if d.Std() < time.Minute {
+		problems = append(problems, fmt.Sprintf("spec.window must be at least 1m (Prometheus rate windows are coarse), got %q", s.Spec.Window))
 	}
 	if s.Spec.Indicator.Type != IndicatorRatio {
 		problems = append(problems, fmt.Sprintf("spec.indicator.type must be %q, got %q", IndicatorRatio, s.Spec.Indicator.Type))

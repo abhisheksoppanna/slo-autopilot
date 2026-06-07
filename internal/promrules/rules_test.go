@@ -136,6 +136,59 @@ func TestMarshalIsValidYAML(t *testing.T) {
 	}
 }
 
+// TestMultiWindowAlertInvariant pins the heart of the SRE-Workbook method: each
+// alert fires only when BOTH the long and short window breach the SAME
+// Factor*budget threshold, AND-ed together, with For:2m. Without this, a
+// refactor could silently drop the short window, swap and→or, or mismatch the
+// per-side threshold and every other test would still pass.
+func TestMultiWindowAlertInvariant(t *testing.T) {
+	s := sampleSLO() // objective 99.9 → budget 0.001
+	rg := Generate(s, burnrate.Standard())
+
+	type want struct{ long, short, threshold string }
+	wants := map[string]want{
+		"1h": {"1h", "5m", "0.0144"},
+		"6h": {"6h", "30m", "0.006"},
+		"1d": {"1d", "2h", "0.003"},
+		"3d": {"3d", "6h", "0.001"},
+	}
+
+	alerts := map[string]Rule{}
+	for _, r := range rg.Groups[0].Rules {
+		if r.Alert != "" {
+			alerts[r.Labels["burn_window"]] = r
+		}
+	}
+	if len(alerts) != len(wants) {
+		t.Fatalf("got %d alerts, want %d", len(alerts), len(wants))
+	}
+
+	for name, w := range wants {
+		r, ok := alerts[name]
+		if !ok {
+			t.Errorf("no alert for window %s", name)
+			continue
+		}
+		longRec := RecordingRuleName(mustDur(t, w.long))
+		shortRec := RecordingRuleName(mustDur(t, w.short))
+		if !strings.Contains(r.Expr, longRec) {
+			t.Errorf("%s alert missing long recording rule %q:\n%s", name, longRec, r.Expr)
+		}
+		if !strings.Contains(r.Expr, shortRec) {
+			t.Errorf("%s alert missing short recording rule %q:\n%s", name, shortRec, r.Expr)
+		}
+		if !strings.Contains(r.Expr, "and") {
+			t.Errorf("%s alert must AND the two windows:\n%s", name, r.Expr)
+		}
+		if c := strings.Count(r.Expr, w.threshold); c < 2 {
+			t.Errorf("%s threshold %q must apply to both windows, found %d:\n%s", name, w.threshold, c, r.Expr)
+		}
+		if r.For != "2m" {
+			t.Errorf("%s alert For = %q, want 2m", name, r.For)
+		}
+	}
+}
+
 func mustDur(t *testing.T, s string) spec.Duration {
 	t.Helper()
 	d, err := spec.ParseDuration(s)

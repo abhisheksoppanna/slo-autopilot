@@ -115,15 +115,18 @@ func TestValidate(t *testing.T) {
 	}
 
 	mutations := map[string]func(*SLO){
-		"bad apiVersion":  func(s *SLO) { s.APIVersion = "v2" },
-		"missing name":    func(s *SLO) { s.Metadata.Name = "" },
-		"missing service": func(s *SLO) { s.Metadata.Service = "" },
-		"objective 100":   func(s *SLO) { s.Spec.Objective = 100 },
-		"objective 0":     func(s *SLO) { s.Spec.Objective = 0 },
-		"bad window":      func(s *SLO) { s.Spec.Window = "soon" },
-		"bad indicator":   func(s *SLO) { s.Spec.Indicator.Type = "threshold" },
-		"missing error":   func(s *SLO) { s.Spec.Indicator.ErrorMetric = "" },
-		"missing total":   func(s *SLO) { s.Spec.Indicator.TotalMetric = "" },
+		"bad apiVersion":   func(s *SLO) { s.APIVersion = "v2" },
+		"missing name":     func(s *SLO) { s.Metadata.Name = "" },
+		"missing service":  func(s *SLO) { s.Metadata.Service = "" },
+		"objective 100":    func(s *SLO) { s.Spec.Objective = 100 },
+		"objective 0":      func(s *SLO) { s.Spec.Objective = 0 },
+		"bad window":       func(s *SLO) { s.Spec.Window = "soon" },
+		"zero window":      func(s *SLO) { s.Spec.Window = "0" },
+		"negative window":  func(s *SLO) { s.Spec.Window = "-1h" },
+		"subminute window": func(s *SLO) { s.Spec.Window = "30s" },
+		"bad indicator":    func(s *SLO) { s.Spec.Indicator.Type = "threshold" },
+		"missing error":    func(s *SLO) { s.Spec.Indicator.ErrorMetric = "" },
+		"missing total":    func(s *SLO) { s.Spec.Indicator.TotalMetric = "" },
 	}
 	for name, mutate := range mutations {
 		s := valid()

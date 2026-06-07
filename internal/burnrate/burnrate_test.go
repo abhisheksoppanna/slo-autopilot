@@ -52,19 +52,6 @@ func TestDistinctWindowsSortedAndDeduped(t *testing.T) {
 	}
 }
 
-func TestPageWindows(t *testing.T) {
-	p := Standard()
-	pages := p.PageWindows()
-	if len(pages) != 2 {
-		t.Fatalf("got %d page windows, want 2", len(pages))
-	}
-	for _, w := range pages {
-		if w.Severity != SeverityPage {
-			t.Errorf("window %s has severity %s, want page", w.Name, w.Severity)
-		}
-	}
-}
-
 func TestPolicyByName(t *testing.T) {
 	cases := map[string]string{
 		"":         "standard",

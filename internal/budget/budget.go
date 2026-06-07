@@ -31,6 +31,7 @@ type WindowBurn struct {
 type Status struct {
 	Name         string
 	Service      string
+	Window       string // compliance window, e.g. "30d"
 	ObjectivePct float64
 	ErrorBudget  float64 // allowed error fraction, e.g. 0.001
 
@@ -69,6 +70,7 @@ func Evaluate(ctx context.Context, q Querier, s spec.SLO, p burnrate.Policy) (St
 	st := Status{
 		Name:         s.Metadata.Name,
 		Service:      s.Metadata.Service,
+		Window:       s.Spec.Window,
 		ObjectivePct: s.Spec.Objective,
 		ErrorBudget:  eb,
 	}
@@ -106,11 +108,7 @@ func Evaluate(ctx context.Context, q Querier, s spec.SLO, p burnrate.Policy) (St
 }
 
 func queryRatio(ctx context.Context, q Querier, ind spec.Indicator, w spec.Duration) (float64, error) {
-	query := fmt.Sprintf(
-		"sum(rate(%s[%s])) / clamp_min(sum(rate(%s[%s])), 1e-9)",
-		ind.ErrorMetric, w.Prometheus(), ind.TotalMetric, w.Prometheus(),
-	)
-	v, err := q.QueryScalar(ctx, query)
+	v, err := q.QueryScalar(ctx, ind.RatioExpr(w))
 	if err != nil {
 		if errors.Is(err, prom.ErrNoData) {
 			return 0, nil // no traffic yet → no errors

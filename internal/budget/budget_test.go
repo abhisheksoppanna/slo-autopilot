@@ -125,6 +125,54 @@ func TestEvaluateNoData(t *testing.T) {
 	}
 }
 
+func TestEvaluateNegativeRatioClamped(t *testing.T) {
+	// A negative measured ratio (defensive — shouldn't happen) clamps to 0, so
+	// the budget never appears to refill and no window spuriously fires.
+	q := fakeQuerier{byWindow: map[string]float64{
+		"30d": -0.5, "1h": -0.5, "6h": -0.5, "1d": -0.5, "3d": -0.5,
+	}}
+	st, err := Evaluate(context.Background(), q, testSLO(), burnrate.Standard())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.ConsumedFraction != 0 || st.RemainingFraction != 1 {
+		t.Errorf("negative ratio should clamp to 0 consumed, got consumed=%v remaining=%v",
+			st.ConsumedFraction, st.RemainingFraction)
+	}
+	for _, b := range st.Burns {
+		if b.BurnRate != 0 || b.Firing {
+			t.Errorf("window %s: negative ratio should yield 0 burn, not firing", b.Window.Name)
+		}
+	}
+}
+
+func TestBurnFiresAtExactlyFactorBoundary(t *testing.T) {
+	// Firing is BurnRate >= Factor (boundary inclusive). At the 1h page factor
+	// (14.4x budget = 0.0144 error ratio) the window must fire.
+	q := fakeQuerier{byWindow: map[string]float64{
+		"30d": 0.0001, "1h": 0.0144, "6h": 0.0, "1d": 0.0, "3d": 0.0,
+	}}
+	st, err := Evaluate(context.Background(), q, testSLO(), burnrate.Standard())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var oneH *WindowBurn
+	for i := range st.Burns {
+		if st.Burns[i].Window.Name == "1h" {
+			oneH = &st.Burns[i]
+		}
+	}
+	if oneH == nil {
+		t.Fatal("no 1h burn in status")
+	}
+	if got := round(oneH.BurnRate, 2); got != 14.4 {
+		t.Errorf("1h burn rate = %v, want 14.4", got)
+	}
+	if !oneH.Firing {
+		t.Error("burn rate at exactly the Factor boundary should fire (>=)")
+	}
+}
+
 func round(f float64, places int) float64 {
 	p := 1.0
 	for i := 0; i < places; i++ {

@@ -19,44 +19,56 @@ import (
 var version = "dev"
 
 func main() {
-	if len(os.Args) < 2 {
+	os.Exit(run(os.Args[1:]))
+}
+
+// run dispatches a single command and returns the process exit code:
+//
+//	0 = success, 1 = gate blocked by error-budget policy, 2 = usage/tooling error.
+//
+// Keeping the exit-code logic here (rather than calling os.Exit inline) makes
+// the gate's allow/block/misuse contract — the thing a CI pipeline keys off —
+// unit-testable.
+func run(args []string) int {
+	if len(args) < 1 {
 		usage(os.Stderr)
-		os.Exit(2)
+		return 2
 	}
 
-	cmd, args := os.Args[1], os.Args[2:]
+	cmd, rest := args[0], args[1:]
 	var err error
 	switch cmd {
 	case "validate":
-		err = runValidate(args)
+		err = runValidate(rest)
 	case "generate":
-		err = runGenerate(args)
+		err = runGenerate(rest)
 	case "budget":
-		err = runBudget(args)
+		err = runBudget(rest)
 	case "gate":
-		err = runGate(args)
+		err = runGate(rest)
 	case "version", "--version", "-v":
 		fmt.Printf("slo-autopilot %s\n", version)
-		return
+		return 0
 	case "help", "-h", "--help":
 		usage(os.Stdout)
-		return
+		return 0
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q\n\n", cmd)
 		usage(os.Stderr)
-		os.Exit(2)
+		return 2
 	}
 
 	if err != nil {
-		// gateBlocked is the one "error" that is an expected outcome, not a
+		// gateBlockedError is the one "error" that is an expected outcome, not a
 		// tooling failure: exit 1 (blocked) vs exit 2 (misuse/failure).
 		if _, blocked := err.(gateBlockedError); blocked {
 			fmt.Fprintln(os.Stderr, color(red, "✗ deploy blocked: ")+err.Error())
-			os.Exit(1)
+			return 1
 		}
 		fmt.Fprintln(os.Stderr, color(red, "error: ")+err.Error())
-		os.Exit(2)
+		return 2
 	}
+	return 0
 }
 
 func usage(w *os.File) {

@@ -33,14 +33,14 @@ func Generate(s spec.SLO, p burnrate.Policy) ([]byte, error) {
 
 	// Row 0: headline stats.
 	budgetRemainingExpr := fmt.Sprintf("clamp_min(1 - (%s) / %s, 0) * 100",
-		fullWindowRatioExpr(s), gFloat(budget))
+		fullWindowRatioExpr(s), promrules.TrimFloat(budget))
 	panels = append(panels, statPanel(next(), "Error budget remaining",
 		budgetRemainingExpr, gridPos(0, 0, 8, 8), "percent",
 		[]threshold{{nil, "red"}, {f(10), "orange"}, {f(25), "green"}},
 	))
 
 	panels = append(panels, statPanel(next(), "Current burn rate",
-		fmt.Sprintf("%s%s / %s", promrules.RecordingRuleName(fastest(p)), sel, gFloat(budget)),
+		fmt.Sprintf("%s%s / %s", promrules.RecordingRuleName(fastest(p)), sel, promrules.TrimFloat(budget)),
 		gridPos(8, 0, 8, 8), "none",
 		[]threshold{{nil, "green"}, {f(1), "orange"}, {f(14.4), "red"}},
 	))
@@ -52,11 +52,11 @@ func Generate(s spec.SLO, p burnrate.Policy) ([]byte, error) {
 	))
 
 	// Row 1: SLI vs objective over time.
-	sliExpr := fmt.Sprintf("(1 - %s%s) * 100", promrules.RecordingRuleName(shortest(p)), sel)
+	sliExpr := fmt.Sprintf("(1 - %s%s) * 100", promrules.RecordingRuleName(sliWindow(p)), sel)
 	sli := timeseriesPanel(next(), "SLI — success ratio vs objective",
 		[]target{
 			{Expr: sliExpr, Legend: "success %"},
-			{Expr: gFloat(s.Spec.Objective), Legend: "objective"},
+			{Expr: promrules.TrimFloat(s.Spec.Objective), Legend: "objective"},
 		},
 		gridPos(0, 8, 24, 8), "percent",
 	)
@@ -66,7 +66,7 @@ func Generate(s spec.SLO, p burnrate.Policy) ([]byte, error) {
 	var burnTargets []target
 	for _, w := range p.Windows {
 		burnTargets = append(burnTargets, target{
-			Expr:   fmt.Sprintf("%s%s / %s", promrules.RecordingRuleName(w.Long), sel, gFloat(budget)),
+			Expr:   fmt.Sprintf("%s%s / %s", promrules.RecordingRuleName(w.Long), sel, promrules.TrimFloat(budget)),
 			Legend: fmt.Sprintf("%s burn (%gx threshold)", w.Long, w.Factor),
 		})
 	}
@@ -98,12 +98,10 @@ func Generate(s spec.SLO, p burnrate.Policy) ([]byte, error) {
 // policy's recording-rule windows).
 func fullWindowRatioExpr(s spec.SLO) string {
 	w, err := s.WindowDuration()
-	win := "30d"
-	if err == nil {
-		win = w.Prometheus()
+	if err != nil {
+		w, _ = spec.ParseDuration("30d")
 	}
-	return fmt.Sprintf("sum(rate(%s[%s])) / clamp_min(sum(rate(%s[%s])), 1e-9)",
-		s.Spec.Indicator.ErrorMetric, win, s.Spec.Indicator.TotalMetric, win)
+	return s.Spec.Indicator.RatioExpr(w)
 }
 
 func fastest(p burnrate.Policy) spec.Duration {
@@ -117,9 +115,25 @@ func fastest(p burnrate.Policy) spec.Duration {
 	return best
 }
 
-func shortest(p burnrate.Policy) spec.Duration {
-	ds := p.DistinctWindows()
-	return ds[0]
+// sliWindow picks a smoothed window for the SLI-vs-objective line: the longest
+// page-severity window, so a single error in a quiet minute does not make a
+// healthy long-term SLO look like it is failing. Falls back to the longest
+// window in the policy.
+func sliWindow(p burnrate.Policy) spec.Duration {
+	var best spec.Duration
+	for _, w := range p.Windows {
+		if w.Severity == burnrate.SeverityPage && w.Long > best {
+			best = w.Long
+		}
+	}
+	if best == 0 {
+		for _, d := range p.DistinctWindows() {
+			if d > best {
+				best = d
+			}
+		}
+	}
+	return best
 }
 
 // ---- panel builders -------------------------------------------------------
@@ -234,6 +248,3 @@ func dashUID(name string) string {
 }
 
 func f(v float64) *float64 { return &v }
-
-// gFloat formats a float compactly for embedding in a PromQL expression.
-func gFloat(v float64) string { return fmt.Sprintf("%g", v) }

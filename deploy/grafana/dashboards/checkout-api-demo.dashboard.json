@@ -62,7 +62,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "clamp_min(1 - (sum(rate(http_requests_total{service=\"payment-api\", path=\"/checkout\", code=~\"5..\"}[1h])) / clamp_min(sum(rate(http_requests_total{service=\"payment-api\", path=\"/checkout\"}[1h])), 1e-9)) / 0.010000000000000009, 0) * 100",
+          "expr": "clamp_min(1 - (sum(rate(http_requests_total{service=\"payment-api\", path=\"/checkout\", code=~\"5..\"}[1h])) / clamp_min(sum(rate(http_requests_total{service=\"payment-api\", path=\"/checkout\"}[1h])), 1e-9)) / 0.01, 0) * 100",
           "refId": "A"
         }
       ],
@@ -126,7 +126,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "slo:sli_error:ratio_rate5m{slo=\"checkout-api-demo\"} / 0.010000000000000009",
+          "expr": "slo:sli_error:ratio_rate5m{slo=\"checkout-api-demo\"} / 0.01",
           "refId": "A"
         }
       ],
@@ -243,7 +243,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "(1 - slo:sli_error:ratio_rate1m{slo=\"checkout-api-demo\"}) * 100",
+          "expr": "(1 - slo:sli_error:ratio_rate15m{slo=\"checkout-api-demo\"}) * 100",
           "legendFormat": "success %",
           "refId": "A"
         },
@@ -310,7 +310,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "slo:sli_error:ratio_rate5m{slo=\"checkout-api-demo\"} / 0.010000000000000009",
+          "expr": "slo:sli_error:ratio_rate5m{slo=\"checkout-api-demo\"} / 0.01",
           "legendFormat": "5m burn (14.4x threshold)",
           "refId": "A"
         },
@@ -319,7 +319,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "slo:sli_error:ratio_rate15m{slo=\"checkout-api-demo\"} / 0.010000000000000009",
+          "expr": "slo:sli_error:ratio_rate15m{slo=\"checkout-api-demo\"} / 0.01",
           "legendFormat": "15m burn (6x threshold)",
           "refId": "B"
         },
@@ -328,7 +328,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "slo:sli_error:ratio_rate1h{slo=\"checkout-api-demo\"} / 0.010000000000000009",
+          "expr": "slo:sli_error:ratio_rate1h{slo=\"checkout-api-demo\"} / 0.01",
           "legendFormat": "1h burn (3x threshold)",
           "refId": "C"
         },
@@ -337,7 +337,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "slo:sli_error:ratio_rate3h{slo=\"checkout-api-demo\"} / 0.010000000000000009",
+          "expr": "slo:sli_error:ratio_rate3h{slo=\"checkout-api-demo\"} / 0.01",
           "legendFormat": "3h burn (1x threshold)",
           "refId": "D"
         }

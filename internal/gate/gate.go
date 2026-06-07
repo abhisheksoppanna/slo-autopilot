@@ -45,7 +45,7 @@ func Evaluate(st budget.Status, p Policy) Decision {
 		if st.Exhausted() {
 			d.Reasons = append(d.Reasons, fmt.Sprintf(
 				"error budget exhausted (%.1f%% of budget consumed over %s)",
-				st.ConsumedFraction*100, st.Name,
+				st.ConsumedFraction*100, st.Window,
 			))
 		} else {
 			d.Reasons = append(d.Reasons, fmt.Sprintf(

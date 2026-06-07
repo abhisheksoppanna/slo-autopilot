@@ -10,73 +10,49 @@ groups:
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate1m
-          expr: |-
-            sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[1m]))
-            /
-            clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[1m])), 1e-9)
+          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[1m])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[1m])), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate3m
-          expr: |-
-            sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[3m]))
-            /
-            clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[3m])), 1e-9)
+          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[3m])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[3m])), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate5m
-          expr: |-
-            sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[5m]))
-            /
-            clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[5m])), 1e-9)
+          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[5m])), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate10m
-          expr: |-
-            sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[10m]))
-            /
-            clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[10m])), 1e-9)
+          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[10m])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[10m])), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate15m
-          expr: |-
-            sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[15m]))
-            /
-            clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[15m])), 1e-9)
+          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[15m])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[15m])), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate30m
-          expr: |-
-            sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[30m]))
-            /
-            clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[30m])), 1e-9)
+          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[30m])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[30m])), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate1h
-          expr: |-
-            sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[1h]))
-            /
-            clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[1h])), 1e-9)
+          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[1h])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[1h])), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate3h
-          expr: |-
-            sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[3h]))
-            /
-            clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[3h])), 1e-9)
+          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[3h])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[3h])), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
@@ -96,7 +72,7 @@ groups:
             slo: checkout-api-demo
             team: payments
           annotations:
-            description: SLO "checkout-api-demo" (objective 99% over 1h) error ratio exceeds 14.4x the budget on both the 5m and 1m windows. Sustained, this consumes 120% of the budget over 5m. Demo SLO — 99% of /checkout requests succeed over 1h.
+            description: SLO "checkout-api-demo" (objective 99% over 1h) error ratio exceeds 14.4x the budget on both the 5m and 1m windows. Sustained, this exhausts the entire error budget within 5m. Demo SLO — 99% of /checkout requests succeed over 1h.
             runbook: https://sre.google/workbook/alerting-on-slos/
             summary: payment-api is burning its error budget fast (14.4x over 5m/1m)
         - alert: CheckoutApiDemoErrorBudgetBurnPage15m
@@ -114,7 +90,7 @@ groups:
             slo: checkout-api-demo
             team: payments
           annotations:
-            description: SLO "checkout-api-demo" (objective 99% over 1h) error ratio exceeds 6x the budget on both the 15m and 3m windows. Sustained, this consumes 150% of the budget over 15m. Demo SLO — 99% of /checkout requests succeed over 1h.
+            description: SLO "checkout-api-demo" (objective 99% over 1h) error ratio exceeds 6x the budget on both the 15m and 3m windows. Sustained, this exhausts the entire error budget within 15m. Demo SLO — 99% of /checkout requests succeed over 1h.
             runbook: https://sre.google/workbook/alerting-on-slos/
             summary: payment-api is burning its error budget fast (6x over 15m/3m)
         - alert: CheckoutApiDemoErrorBudgetBurnTicket1h
@@ -132,7 +108,7 @@ groups:
             slo: checkout-api-demo
             team: payments
           annotations:
-            description: SLO "checkout-api-demo" (objective 99% over 1h) error ratio exceeds 3x the budget on both the 1h and 10m windows. Sustained, this consumes 300% of the budget over 1h. Demo SLO — 99% of /checkout requests succeed over 1h.
+            description: SLO "checkout-api-demo" (objective 99% over 1h) error ratio exceeds 3x the budget on both the 1h and 10m windows. Sustained, this exhausts the entire error budget within 1h. Demo SLO — 99% of /checkout requests succeed over 1h.
             runbook: https://sre.google/workbook/alerting-on-slos/
             summary: payment-api is burning its error budget fast (3x over 1h/10m)
         - alert: CheckoutApiDemoErrorBudgetBurnTicket3h
@@ -150,6 +126,6 @@ groups:
             slo: checkout-api-demo
             team: payments
           annotations:
-            description: SLO "checkout-api-demo" (objective 99% over 1h) error ratio exceeds 1x the budget on both the 3h and 30m windows. Sustained, this consumes 300% of the budget over 3h. Demo SLO — 99% of /checkout requests succeed over 1h.
+            description: SLO "checkout-api-demo" (objective 99% over 1h) error ratio exceeds 1x the budget on both the 3h and 30m windows. Sustained, this exhausts the entire error budget within 3h. Demo SLO — 99% of /checkout requests succeed over 1h.
             runbook: https://sre.google/workbook/alerting-on-slos/
             summary: payment-api is burning its error budget fast (1x over 3h/30m)

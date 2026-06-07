@@ -27,7 +27,7 @@ func TestEvaluateAllowsHealthy(t *testing.T) {
 }
 
 func TestEvaluateBlocksExhausted(t *testing.T) {
-	st := budget.Status{Name: "checkout", RemainingFraction: 0, ConsumedFraction: 1.3}
+	st := budget.Status{Name: "checkout", Window: "30d", RemainingFraction: 0, ConsumedFraction: 1.3}
 	d := Evaluate(st, DefaultPolicy())
 	if d.Allowed {
 		t.Fatal("exhausted budget should block")

@@ -123,18 +123,6 @@ func (p Policy) DistinctWindows() []spec.Duration {
 	return out
 }
 
-// PageWindows returns only the page-severity windows, used by the release gate
-// to decide whether a fast burn should block a deploy.
-func (p Policy) PageWindows() []Window {
-	var out []Window
-	for _, w := range p.Windows {
-		if w.Severity == SeverityPage {
-			out = append(out, w)
-		}
-	}
-	return out
-}
-
 func hours(n int) spec.Duration   { return spec.Duration(time.Duration(n) * time.Hour) }
 func minutes(n int) spec.Duration { return spec.Duration(time.Duration(n) * time.Minute) }
 
