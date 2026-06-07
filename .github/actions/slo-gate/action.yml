@@ -1,0 +1,47 @@
+name: SLO Autopilot gate
+description: >-
+  Block a deploy when a service is out of error budget or burning it fast.
+  Wraps `slo-autopilot gate`; the step fails (exit 1) when the gate blocks.
+
+inputs:
+  spec:
+    description: Path to the SLO spec file.
+    required: true
+  prometheus-url:
+    description: Base URL of the Prometheus to query (e.g. https://prom.internal).
+    required: true
+  policy:
+    description: "Burn-rate policy: standard | fast."
+    required: false
+    default: standard
+  min-remaining:
+    description: Block if remaining error budget is below this fraction (0..1).
+    required: false
+    default: "0"
+  block-fast-burn:
+    description: Block when a page-severity burn is active.
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: ${{ github.action_path }}/../../../go.mod
+
+    - name: Build slo-autopilot
+      shell: bash
+      run: |
+        cd "${{ github.action_path }}/../../.."
+        go build -o "${RUNNER_TEMP}/slo-autopilot" ./cmd/slo-autopilot
+
+    - name: Evaluate error-budget gate
+      shell: bash
+      run: |
+        "${RUNNER_TEMP}/slo-autopilot" gate \
+          -f "${{ inputs.spec }}" \
+          --prometheus "${{ inputs.prometheus-url }}" \
+          --policy "${{ inputs.policy }}" \
+          --min-remaining "${{ inputs.min-remaining }}" \
+          --block-fast-burn="${{ inputs.block-fast-burn }}"

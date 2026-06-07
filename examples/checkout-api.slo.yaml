@@ -1,0 +1,22 @@
+# A production-shaped SLO: 99.9% of checkout requests succeed over a rolling
+# 30-day window. This is the spec you would commit to the repo and review like
+# any other code. Everything else — alerts, dashboards, the release gate — is
+# generated from it.
+apiVersion: slo-autopilot/v1
+metadata:
+  name: checkout-api-availability
+  service: checkout-api
+  team: payments
+  labels:
+    tier: critical
+spec:
+  description: 99.9% of checkout requests return a non-5xx response.
+  objective: 99.9          # target success percentage over the window
+  window: 30d              # rolling compliance window
+  indicator:
+    type: ratio
+    # Counter selectors WITHOUT a range — slo-autopilot wraps each in
+    # rate(...[window]) for every burn-rate window, so the SLI is measured
+    # identically in alerts, dashboards, and the gate.
+    errorMetric: 'http_requests_total{service="checkout-api", code=~"5.."}'
+    totalMetric: 'http_requests_total{service="checkout-api"}'

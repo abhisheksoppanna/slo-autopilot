@@ -1,0 +1,21 @@
+# The SLO used by the local `docker compose` demo. It is deliberately punchy so
+# a full error-budget burn — and a blocked deploy — happens within a few minutes
+# rather than over 30 days:
+#
+#   * objective 99% over a 1h window  → a 1% error budget that burns fast
+#   * paired with `--policy fast`     → page alerts on 5m/1m windows
+#
+# Do not ship this shape to production; see checkout-api.slo.yaml for that.
+apiVersion: slo-autopilot/v1
+metadata:
+  name: checkout-api-demo
+  service: payment-api
+  team: payments
+spec:
+  description: Demo SLO — 99% of /checkout requests succeed over 1h.
+  objective: 99
+  window: 1h
+  indicator:
+    type: ratio
+    errorMetric: 'http_requests_total{service="payment-api", path="/checkout", code=~"5.."}'
+    totalMetric: 'http_requests_total{service="payment-api", path="/checkout"}'

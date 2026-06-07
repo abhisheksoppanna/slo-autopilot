@@ -1,0 +1,18 @@
+# Build artifacts
+/bin/
+*.exe
+*.out
+
+# Local generation scratch
+/tmp/
+
+# Editor / OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Go test/coverage
+*.test
+coverage.out
+coverage.html

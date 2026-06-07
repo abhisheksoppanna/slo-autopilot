@@ -1,0 +1,63 @@
+# Local SLO Autopilot demo. From the repo root:
+#
+#   make demo-up        # or: docker compose -f deploy/docker-compose.yml up --build
+#
+# Then:
+#   Grafana     http://localhost:3000   (anonymous, dashboard "SLO — checkout-api-demo")
+#   Prometheus  http://localhost:9090   (/alerts shows the burn-rate alerts)
+#   Service     http://localhost:8080/checkout
+#
+# Start a fire and watch the budget burn + the gate flip red:
+#   curl 'http://localhost:8080/chaos?errors=0.4'
+#   make demo-gate
+#
+# Put it out:
+#   curl 'http://localhost:8080/chaos?reset=1'
+
+name: slo-autopilot-demo
+
+services:
+  payment-api:
+    build:
+      context: ..
+      dockerfile: Dockerfile.payment-api
+    image: slo-autopilot/payment-api:demo
+    environment:
+      SELFLOAD: "true"   # generate ~25 rps of internal traffic so dashboards populate immediately
+      RPS: "25"
+      ERRORS: "0"        # start healthy; inject failures via /chaos
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "/payment-api", "-healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=2h
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - payment-api
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus

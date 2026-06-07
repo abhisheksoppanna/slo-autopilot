@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-clean:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: test (race)
+        run: go test -race -count=1 ./...
+
+      - name: build
+        run: go build ./...
+
+      - name: generated artifacts are up to date
+        # Dogfood: regenerate the committed demo rules/dashboard and fail if the
+        # working tree drifts from the spec.
+        run: |
+          go run ./cmd/slo-autopilot generate \
+            -f examples/checkout-api.demo.slo.yaml --policy fast \
+            --out-dir /tmp/gen
+          diff -u deploy/prometheus/rules/checkout-api-demo.rules.yaml /tmp/gen/checkout-api-demo.rules.yaml
+          diff -u deploy/grafana/dashboards/checkout-api-demo.dashboard.json /tmp/gen/checkout-api-demo.dashboard.json
+
+  lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest

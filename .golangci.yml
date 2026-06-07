@@ -1,0 +1,24 @@
+# A deliberately mainstream linter set — strict enough to catch real problems,
+# not so opinionated that it fights idiomatic Go.
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gofmt
+    - goimports
+    - misspell
+    - revive
+    - unconvert
+
+issues:
+  exclude-rules:
+    # Test helpers and table-driven tests are allowed to be a little loose.
+    - path: _test\.go
+      linters:
+        - errcheck

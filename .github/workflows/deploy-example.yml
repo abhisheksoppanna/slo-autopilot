@@ -1,0 +1,33 @@
+# Illustrative deploy pipeline: the error-budget gate runs BEFORE the deploy
+# step, so a service that is out of budget or burning fast freezes its own
+# release. Triggered manually because it needs a reachable Prometheus.
+name: deploy-example
+
+on:
+  workflow_dispatch:
+    inputs:
+      prometheus-url:
+        description: Prometheus base URL to evaluate the gate against
+        required: true
+        default: http://localhost:9090
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The gate. If the SLO is unhealthy, this step fails and the job stops
+      # here — nothing below it (the actual deploy) ever runs.
+      - name: SLO error-budget gate
+        uses: ./.github/actions/slo-gate
+        with:
+          spec: examples/checkout-api.slo.yaml
+          prometheus-url: ${{ inputs.prometheus-url }}
+          min-remaining: "0.10" # require at least 10% of the budget to remain
+
+      - name: Deploy
+        run: echo "Budget healthy — shipping it. 🚀"
