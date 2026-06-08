@@ -26,6 +26,11 @@ That exit code is the whole point. Drop the gate into a pipeline and a service
 that is on fire stops shipping new code — automatically, with an audit trail,
 instead of relying on whoever is awake to remember the rule.
 
+The generated Grafana dashboard during a live error-budget burn — budget exhausted,
+page alerts firing, the SLI diving below its objective:
+
+![SLO Autopilot's generated Grafana dashboard during a live error-budget burn: error budget remaining at 0%, burn rate near 50x, two page alerts firing, and the SLI dropping below its 99% objective.](docs/img/dashboard.png)
+
 ---
 
 ## Why

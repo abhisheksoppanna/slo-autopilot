@@ -168,7 +168,7 @@ func statPanel(id int, title, expr string, gp obj, unit string, steps []threshol
 			"colorMode":   "background",
 			"graphMode":   "area",
 			"justifyMode": "auto",
-			"textMode":    "value_and_name",
+			"textMode":    "value", // show just the value; the panel title names it
 			"reduceOptions": obj{
 				"calcs":  []string{"lastNotNull"},
 				"fields": "",
