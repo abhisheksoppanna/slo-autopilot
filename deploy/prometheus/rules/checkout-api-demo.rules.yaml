@@ -10,49 +10,49 @@ groups:
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate1m
-          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[1m])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[1m])), 1e-9)
+          expr: (sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[1m])) or vector(0)) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[1m])) or vector(0), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate3m
-          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[3m])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[3m])), 1e-9)
+          expr: (sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[3m])) or vector(0)) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[3m])) or vector(0), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate5m
-          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[5m])), 1e-9)
+          expr: (sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[5m])) or vector(0)) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[5m])) or vector(0), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate10m
-          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[10m])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[10m])), 1e-9)
+          expr: (sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[10m])) or vector(0)) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[10m])) or vector(0), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate15m
-          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[15m])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[15m])), 1e-9)
+          expr: (sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[15m])) or vector(0)) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[15m])) or vector(0), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate30m
-          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[30m])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[30m])), 1e-9)
+          expr: (sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[30m])) or vector(0)) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[30m])) or vector(0), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate1h
-          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[1h])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[1h])), 1e-9)
+          expr: (sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[1h])) or vector(0)) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[1h])) or vector(0), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
             team: payments
         - record: slo:sli_error:ratio_rate3h
-          expr: sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[3h])) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[3h])), 1e-9)
+          expr: (sum(rate(http_requests_total{service="payment-api", path="/checkout", code=~"5.."}[3h])) or vector(0)) / clamp_min(sum(rate(http_requests_total{service="payment-api", path="/checkout"}[3h])) or vector(0), 1e-9)
           labels:
             service: payment-api
             slo: checkout-api-demo
