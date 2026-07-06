@@ -103,13 +103,18 @@ func (s SLO) AlertBaseName() string {
 }
 
 // RatioExpr returns the canonical PromQL error-ratio expression for the given
-// window — sum(rate(error[w])) / clamp_min(sum(rate(total[w])), 1e-9). It is the
-// single source of truth for how the SLI is measured, so the generated alerts,
-// the dashboard, and the live gate all compute it identically. The clamp_min
-// keeps an idle service (no traffic) reporting a 0 ratio rather than NaN.
+// window. It is the single source of truth for how the SLI is measured, so the
+// generated alerts, the dashboard, and the live gate all compute it identically.
+//
+// Two guards make a healthy service read as 0, not as a gap:
+//   - "or vector(0)" treats a series that doesn't exist as 0, so a service with
+//     zero 5xx (whose error counter never appears) reports a 0 ratio instead of
+//     an empty result that renders as "No data".
+//   - clamp_min keeps the denominator non-zero, so an idle service is 0, not NaN.
 func (i Indicator) RatioExpr(window Duration) string {
 	w := window.Prometheus()
-	return fmt.Sprintf("sum(rate(%s[%s])) / clamp_min(sum(rate(%s[%s])), 1e-9)",
+	return fmt.Sprintf(
+		"(sum(rate(%s[%s])) or vector(0)) / clamp_min(sum(rate(%s[%s])) or vector(0), 1e-9)",
 		i.ErrorMetric, w, i.TotalMetric, w)
 }
 

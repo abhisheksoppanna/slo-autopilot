@@ -62,7 +62,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "clamp_min(1 - (sum(rate(http_requests_total{service=\"payment-api\", path=\"/checkout\", code=~\"5..\"}[1h])) / clamp_min(sum(rate(http_requests_total{service=\"payment-api\", path=\"/checkout\"}[1h])), 1e-9)) / 0.01, 0) * 100",
+          "expr": "clamp_min(1 - ((sum(rate(http_requests_total{service=\"payment-api\", path=\"/checkout\", code=~\"5..\"}[1h])) or vector(0)) / clamp_min(sum(rate(http_requests_total{service=\"payment-api\", path=\"/checkout\"}[1h])) or vector(0), 1e-9)) / 0.01, 0) * 100",
           "refId": "A"
         }
       ],
